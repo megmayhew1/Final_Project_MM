@@ -3,7 +3,7 @@ Final Project for the Data Management and Visualisation module (PSY6422) as a pa
 
 My project explores a data set collected of 10015 patients which details each patients age, gender and the localization of their skin cancer. This was done in order to explore any trends in the data that could be used to assess when an individual is more likely to develop skin cancer. This can also act as a guide to potential media advertisements in suggesting who to target advertisements for skin cancer awareness. 
 
-The full project is able to be viewed here: file:///Users/Megan.M/Documents/Repositories/PSY6422_Final_Project/index%202.html 
+The full project is able to be viewed here: https://megmayhew1.github.io/PSY6422_Final_Project/
 
 This repo contains: 
 
