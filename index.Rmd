@@ -1,0 +1,229 @@
+---
+title: "PSY6422 Final Project - Skin Cancer"
+author: "210191576"
+date: "20/04/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(here)
+library(tidyverse)
+library(plotly)
+```
+
+# Final Project
+
+*including data origin*
+
+This is my final project for the Data Management and Visualisation module within the Systems Neuroscience MSc. This project will be exploring a raw data set collected for skin cancer in 2018, this data set was made available for use on [kaggle](https://www.kaggle.com/datasets/kmader/skin-cancer-mnist-ham10000). This data set included 10015 patients which included their age, sex, and localization of skin cancer.
+
+# Research Questions 
+
+I am interested if there will be any trends present within the data which suggests a reliable way to potentially determine those more at risk of skin cancer.
+
+To explore this my research questions are the following:
+
+1. Is there a more common area/s of where skin cancer is located on the body, regardless of gender or age. 
+
+2. When considering the top five most common locations of skin cancer (obtained in visualisation 1), are there any noticable patterns present with the average age of either male or female patients?
+
+3. What are the most common age groups for a skin cancer diagnosis, regardless of localization. 
+
+Each visualisation will explore the research questions in order. 
+
+```{r echo=FALSE, out.width='100%'}
+knitr::include_graphics(here("images", "skin-cancer-awareness-month.jpg"))
+```
+
+```{r dataimport}
+# Importing of the data
+df <- read.csv(here("data", "raw_data.csv"))
+
+# to display the top of the data frame
+head(df)
+```
+
+```{r datawrangling, warning=FALSE}
+# Organise the data so that it is grouped by localization and add a percentage column
+skincancer <- df %>%
+  group_by(localization) %>%
+  count() %>%
+  ungroup() %>%
+  mutate(perc = `n` / sum(`n`)) %>%
+  arrange(perc) %>%
+  mutate(percentage = scales::percent(perc))
+# to see the new layout of the data set. 
+head(skincancer) 
+```
+
+# Visualisation 1
+*Creating a bar chart to explore where the most common skin cancer localization are.* 
+
+```{r, fig.show='hide'}
+
+# bar plot
+p <- ggplot(skincancer, 
+            aes(x = localization, y = n, fill = percentage))
+p + geom_bar(stat = "identity") + 
+# Manually input the colour of each bar 
+  scale_fill_manual(values = c("gold3", "gold2", "gold1", "gold", "yellow2", 
+                               "yellow1", "yellow", "lightgoldenrod1", "khaki1",
+                               "lightgoldenrod2", "lightgoldenrod", "palegoldenrod",
+                               "lightgoldenrodyellow", "lightyellow1", "lightyellow")) + 
+# Add labels to the axis' and the plot
+  labs(title = "Patients Localization of Skincancer", x = "Localization of Skincancer", y = "Number of reported Cases") +
+# Change the font to bold and italic  
+  theme(axis.title = element_text(face = "bold.italic", colour = "black"), plot.title = element_text(face = "bold")) +
+  #flip the graph 
+  coord_flip()
+# add hover text to the graph
+library(htmlwidgets)
+p <- ggplotly(tooltip = c("text", "x", "y", "percentage"))
+p
+```
+
+```{r}
+# save the interactive bar chart
+htmlwidgets::saveWidget(as_widget(p), here("figs", "InteractiveBar.html"))
+```
+
+## Visualisation 1: Observations
+From the bar chart we can see that upper extremity, trunk, lower extremity, back and abdomen are the most common areas for skin cancer, within our patient group. The next visualisation will access if there are any patterns present when considering the average age and gender for each skin cancer location.
+
+# Visualisation 2
+*Creating a line chart to explore if there any noticable patterns present within the average age of either male or female patients*
+```{r datatransformation, warning=FALSE}
+# you want to only include the relevant localizations of skin cancer. 
+# the gender 'unknown' will also be removed
+age_sex_sc <- df %>%
+  select(localization, age, sex) %>%
+   filter(localization == c("upper extremity", "trunk", "lower extremity", "back", "abdomen")) %>%
+  subset(sex != "unknown") %>%
+  group_by(localization, sex) %>%
+  summarise_each(funs(mean(., na.rm = TRUE)))
+# To view the new format of the data
+head(age_sex_sc)
+```
+
+```{r colourediting}
+# this ensures that the male and female lines will be in different colours. 
+colour_sex <- c("yellow1", "gold") 
+```
+
+```{r, fig.show='hide'}
+# line chart 
+aa <- ggplot(age_sex_sc, aes(x = localization, y = age, group = sex))
+aa + geom_line(linetype= "longdash") + 
+# Add points for each male and female average age as different colours so they are easily distinguishable, also add a point in the centre. 
+  geom_point(aes(fill=factor(sex)), size = 4, shape = 21, stroke = 0.5) + 
+  geom_point(color = "#FFFFFF", size = 1) + 
+  scale_fill_manual(values = colour_sex) + 
+# Add a boarder to the plot, ensuring its not too bold as it would distract from the findings. 
+  theme(panel.border = element_rect(linetype = "solid", fill = "NA")) + theme(panel.grid.major = element_line(colour = "black", size = 0.2)) + 
+# Add titles to the plot to make it clear what the data is displaying. Edited so that the x and y titles are bold and in italics. 
+  labs(title = "The Average Age of Patients with Skin Cancer", subtitle = "Seperated by Gender and most common skin cancer Localizations", x = "Localization of skin cancer", y = "Average age") + theme(axis.title = element_text(face = "bold.italic", colour = "black"), plot.title = element_text(face = "bold"))
+
+aa <- ggplotly(tooltip = c("text", "x", "y"))
+aa
+```
+```{r}
+# save the interactive bar chart
+htmlwidgets::saveWidget(as_widget(aa), here("figs", "InteractiveLine.html"))
+```
+## Visualisation 2: Obervations
+From this line chart we can clearly see that although age fluctuates per the different localizations of skin cancer, that there is a clear gender seperation present, whereby women throughout all localizations presented are on average younger than the males who have the same skin cancer.
+
+# Visualisation 3
+*Creating a population pyramid to explore the number of patients within each age group*
+
+```{r data_wrangling}
+# First we need to create a column for age groups, and group by this so that the number of patients diagnosed for each age group can be identified
+
+df$AgeGroup <- cut(df$age, 
+                     breaks = c(0, 10, 20, 30, 40, 50, 60, 70
+                                , 80, Inf), 
+                     labels = c( "0-9 years", "10-19", "20-29", "30-39"
+                                 , "40-49", "50-59", "60-69"
+                                 , "70-79", "80+"), 
+                     right = FALSE)
+
+## The 'unknown' ages will be removed from the dataset, as well as unknown sex
+agegroup <- df %>%
+  group_by(AgeGroup, sex) %>%
+  subset(AgeGroup != "unknown") %>%
+  subset(sex != "unknown") %>%
+  count() %>%
+  ungroup() %>%
+  mutate(perc = `n` / sum(`n`)) %>%
+  arrange(perc) %>%
+  mutate(percentage = scales::percent(perc)) %>%
+# Add a further group_by function in order to obtain the total number of patients per age group to use in labelling the plot made next  
+   group_by(AgeGroup, sex) %>%
+   mutate(Total_n = sum(n))
+# To view the new data set layout
+head(agegroup)
+
+```
+
+```{r}
+# Create an animated population pyramid
+
+# load the relevant libraries
+library(ggpol)
+library(gganimate)
+
+pop <- ggplot(agegroup, aes(x = AgeGroup, 
+# use ifelse in order to seperate male and female as well as enabelling the axis to start at zero for both male and female
+                           y = ifelse(sex == "male", n, -n), 
+                           fill = sex)) + 
+  geom_bar(stat = "identity") + 
+  geom_text(aes(label = Total_n)) +
+# Change the colours of the bars to clearly show a different colour for male and female
+  scale_fill_manual(values = c("yellow1", "gold")) +
+# Add specific titles to the main title and axis
+  labs(title = "How the number of cases of skin cancer vary across age groups", 
+       subtitle = "Separated by gender", 
+       x = "Age Group of Patients", 
+       y = "Number of patients") +
+# Change the font size and bold and or italic for the speicifc titles and axis'
+  theme(plot.title = element_text(face = 'bold', size = 14), 
+        axis.title.x = element_text(face = 'bold.italic', size = 12),
+        axis.title.y = element_text(face = 'bold.italic', size = 12),
+        axis.text = element_text(face = "bold", size = 10),
+        panel.grid.major = element_line(colour = "black", size = 0.2), 
+        panel.grid.minor = element_blank(), 
+        ) + 
+# Add the animation to the population pyramid  
+  transition_states(states = AgeGroup, transition_length = 2, state_length = 1) +
+  facet_share(~ sex, dir = 'h',
+              scales = 'free',
+              reverse_num = TRUE) + 
+  enter_fade() + 
+  exit_fade() +
+  coord_flip() +
+  ease_aes('cubic-in-out')
+pop
+
+# Save the animated plot
+
+anim_save("pop.gif", animation = last_animation(), path = "figs")
+```
+
+# Visualisation 3 Observations 
+From this population pyramid it can be observed that although there are many fluctuations throughout each age group that there does appear to be certain age groups which elicit a higher number of patients within a certain gender. For instance within the age group 50-59, 1037 cases were reported from females, whilst only 115 were reported for men. This could suggest that, within our data set at least, that those aged 50-59 and are female are at a higher risk of developing skin cancer.
+
+# Overall Discussion 
+
+From the visualisations presented there have been some interesting findings. The age gap between male and female participants when looking at the top five most common areas of cancer was an interesting finding to view. It suggested that men have a much higher average age for skin cancer, regardless of location when compared to female patients. As well as this when viewing the third visualisation it has suggested significant age groups where the different sex' could be identified as being at a higher risk. 
+
+# Future Directions
+
+I would suggest that future research further explores survival rates and the relationship this has with both gender and age. I would also suggest that there is further work conducted on the gender separations present here and to potentially use the findings as a key in who to target particular skin cancer awareness to. Research would also be better provided on data that not just has a high number of reported cases but also looks at the data over several years. 
+
+# What i have learnt
+This has been my first experience using R, and whilst it was incredibly daunting at first i have learnt to love the process of creating a project like this. There is nothing more infuriating than lines of code not working, however it is such an empowering feeling to solve the problem and get the finished product you were hoping for. I am definitely looking forward to my continued learning experience with R. 
+
+
+
+

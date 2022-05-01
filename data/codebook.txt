@@ -1,0 +1,25 @@
+Where the data comes from: (how was it collected and by who etc)
+
+The data set came from kaggle which had previously acquired the data from the HARVARD Database. It is a collection of dermatoscopic images from different populations, which were 'acquired and stored through different modalities'.
+
+Tschandl, Philipp, 2018, "The HAM10000 dataset, a large collection of multi-source dermatoscopic images of common pigmented skin lesions", https://doi.org/10.7910/DVN/DBW86T, Harvard Dataverse, V3, UNF:6:/APKSsDGVDhwPBWzsStU5A== [fileUNF]
+
+what are the variables:
+
+lesion_id: The identification number of each individual patient 
+
+image_id: The identification number of each individual patients image of their lesion. 
+
+dx: diagnostic categories of pigmented lesions. where 'ackiec' was Actinic keratoses and intraepithelial carcinoma / Bowen's disease. 'bcc' was basal cell carcinoma. 'bkl' benign keratosis-like lesions (solar lentigines / seborrheic keratoses and lichen-planus like keratoses. 'df' was a dermatofibroma. 'mel' was a melanoma. 'nv' was a melanocytes nevi. And 'vasc' included vascular lesions (angiomas, angiokeratomas, pyogenic granulomas and hemorrhage. 
+
+dx_type: The identification of lesion. 'histo' histopathology. 'follow_up' diagnosed in a follow up examination. 'consensus' involved an expert consensus. 'confocal' is when the skin cancer was confirmed by in-vivo confocal microscopy. 
+
+age: The biological age of the patient. 
+
+sex: self declared gender of the patient. 
+
+localisation: The area of the body the skin cancer could be localised to. 
+
+For the purpose of my project i only used the columns sex, age and localization. I used code to separate the information i was interested in so i didn't have to use such a large data set with unnecessary columns/data within. 
+
+For 'unknown'/missing data from the data set it was coded in Rmarkdown to be removed as i was only interested in the known locations, ages and gender of the patients.  
